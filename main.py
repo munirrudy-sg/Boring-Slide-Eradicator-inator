@@ -1,17 +1,16 @@
 import os
-
 import streamlit as st
 from dotenv import load_dotenv
 import google.generativeai as gen_ai
-
+import fitz  # PyMuPDF
 
 # Load environment variables
 load_dotenv()
 
 # Configure Streamlit page settings
 st.set_page_config(
-    page_title="Chat with Gemini-Pro!",
-    page_icon=":brain:",  # Favicon emoji
+    page_title="AI PDF Processor",
+    page_icon=":file_folder:",  # Favicon emoji
     layout="centered",  # Page layout option
 )
 
@@ -21,37 +20,35 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 gen_ai.configure(api_key=GOOGLE_API_KEY)
 model = gen_ai.GenerativeModel('gemini-pro')
 
+# Display the app's title on the page
+st.title("📄 Upload and Process Your PDF")
 
-# Function to translate roles between Gemini-Pro and Streamlit terminology
-def translate_role_for_streamlit(user_role):
-    if user_role == "model":
-        return "assistant"
-    else:
-        return user_role
+# File upload section
+uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
+if uploaded_file is not None:
+    doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
+    slides_data = []
 
+    # Process each page
+    for i, page in enumerate(doc):
+        text = page.get_text()
+        # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
+        lines = text.split('\n')
+        title = lines[0] if lines else "No Title"
+        content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
 
-# Initialize chat session in Streamlit if not already present
-if "chat_session" not in st.session_state:
-    st.session_state.chat_session = model.start_chat(history=[])
+        # Append the extracted data to slides_data
+        slides_data.append((i+1, title, content))
 
+    # Process each slide through Gemini-Pro AI model
+    for page_number, title, content in slides_data:
+        # Construct the prompt for the AI model
+        prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explaination. Don't need to add titles to the slide"
 
-# Display the chatbot's title on the page
-st.title("🤖 Gemini Pro - ChatBot")
+        # Send the prompt to the Gemini-Pro AI model
+        ai_response = model.generate_content([prompt])
 
-# Display the chat history
-for message in st.session_state.chat_session.history:
-    with st.chat_message(translate_role_for_streamlit(message.role)):
-        st.markdown(message.parts[0].text)
+        # Display the enhanced content
+        st.subheader(f"Page {page_number}: {title}")
+        st.text(ai_response.text)  
 
-# Input field for user's message
-user_prompt = st.chat_input("Ask Gemini-Pro...")
-if user_prompt:
-    # Add user's message to chat and display it
-    st.chat_message("user").markdown(user_prompt)
-
-    # Send user's message to Gemini-Pro and get the response
-    gemini_response = st.session_state.chat_session.send_message(user_prompt)
-
-    # Display Gemini-Pro's response
-    with st.chat_message("assistant"):
-        st.markdown(gemini_response.text)
