@@ -19,7 +19,7 @@ def create_presentation(prs, title, text):
     text = text.strip()
     lines = text.split('\n')
 
-    slide_layout = prs.slide_layouts[5]  # Assuming this is a title and content layout
+    slide_layout = prs.slide_layouts[5]  # title and content layout
     slide = prs.slides.add_slide(slide_layout)
 
     # Set the slide width and height to 16:9 aspect ratio
@@ -44,13 +44,14 @@ def create_presentation(prs, title, text):
             run.font.size = Pt(24)  # Set a smaller font size for the title
 
     # Calculate where the content should start, below the title
-    content_top = title_top + title_height  # Add a small buffer below the title
+    content_top = title_top + title_height
 
     # Calculate the content text frame size
     text_frame_width = prs.slide_width - Inches(1)  # Adjust for margins
     text_frame_height = prs.slide_height - content_top - Inches(0.5)  # Adjust for bottom margin
     text_frame = slide.shapes.add_textbox(Inches(0.5), content_top, text_frame_width, text_frame_height).text_frame
     text_frame.word_wrap = True  # Ensure text wraps within the text frame
+
     max_paragraph_width = 0
     total_text_frame_height = 0
 
@@ -180,42 +181,52 @@ st.title("📄 Upload and Process Your PDF")
 # File upload section
 uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
 if uploaded_file is not None:
-    prs = Presentation()
-    doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
-    slides_data = []
+    status_message = st.empty()
+    with st.spinner('Processing your slides...'):
+        prs = Presentation()
+        doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
+        slides_data = []
 
-    # Process each page
-    for i, page in enumerate(doc):
-        text = page.get_text()
-        # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
-        lines = text.split('\n')
-        title = lines[0] if lines else "No Title"
-        content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
+        # Process each page
+        for i, page in enumerate(doc):
+            text = page.get_text()
+            # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
+            lines = text.split('\n')
+            title = lines[0] if lines else "No Title"
+            content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
 
-        # Append the extracted data to slides_data
-        slides_data.append((i+1, title, content))
+            # Append the extracted data to slides_data
+            slides_data.append((i+1, title, content))
 
-    # Process each slide through Gemini-Pro AI model
-    for page_number, title, content in slides_data:
-        # Construct the prompt for the AI model
-        prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
+        total_slides = len(slides_data)
+        # Process each slide through Gemini-Pro AI model
+        for i, (page_number, title, content) in enumerate(slides_data, start=1):
+            # Update the status message with the number of slides left
+            status_message.text(f'Processing slide {page_number} of {total_slides}...')
+            # Construct the prompt for the AI model
+            prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
 
-        # Send the prompt to the Gemini-Pro AI model
-        ai_response = model.generate_content([prompt])
+            # Send the prompt to the Gemini-Pro AI model
+            ai_response = model.generate_content([prompt])
 
-        # Display the enhanced content
-        st.subheader(f"Page {page_number}: {title}")
-        if hasattr(ai_response, 'parts') and ai_response.parts:
-            for part in ai_response.parts:
-                st.text(part.text)
-        else:
-            st.text("No enhanced content available")
-        create_presentation(prs, title,
-                            ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
-    prs.save("output.pptx")
-    output_data = io.BytesIO()
-    prs.save(output_data)
-    output_data.seek(0)
+            # Display the enhanced content
+            st.subheader(f"Page {page_number}: {title}")
+            if hasattr(ai_response, 'parts') and ai_response.parts:
+                for part in ai_response.parts:
+                    st.text(part.text)
+            else:
+                st.text("No enhanced content available")
+            create_presentation(prs, title,
+                                ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
+        prs.save("output.pptx")
+        output_data = io.BytesIO()
+        prs.save(output_data)
+        output_data.seek(0)
+
+    # Clear the status message once done processing
+    status_message.empty()
+
+    st.success('Processing complete!')
     st.download_button(label="Download PowerPoint", data=output_data, file_name="output.pptx",
                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
 
