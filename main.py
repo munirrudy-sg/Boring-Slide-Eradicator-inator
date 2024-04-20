@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import google.generativeai as gen_ai
 import fitz  # PyMuPDF
 from pptx import Presentation
-from pptx.util import Pt
+from pptx.util import Pt, Inches
 import io
 
 def calculate_paragraph_height(paragraph):
@@ -14,17 +14,43 @@ def calculate_paragraph_height(paragraph):
     num_lines = len(paragraph.runs)  # Number of lines in the paragraph
     return num_lines * font_size * line_spacing
 
-def create_presentation(prs, text):
-    text=text.strip()
+
+def create_presentation(prs, title, text):
+    text = text.strip()
     lines = text.split('\n')
 
-    slide_layout = prs.slide_layouts[5]
+    slide_layout = prs.slide_layouts[5]  # Assuming this is a title and content layout
     slide = prs.slides.add_slide(slide_layout)
+
+    # Set the slide width and height to 16:9 aspect ratio
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(5.625)  # Height is calculated as width * 9/16
+
     title_shape = slide.shapes.title
-    slide.shapes._spTree.remove(title_shape._element)
+    title_shape.text = title  # Add title text to the title shape
+    title_width = prs.slide_width  # Set the title to the full width of the slide
 
-    text_frame = slide.shapes.add_textbox(left=0, top=0, width=prs.slide_width, height=prs.slide_height).text_frame
+    # Set the height and top position of the title
+    title_height = Inches(0.5) 
+    title_top = Inches(0.5)  
+    title_shape.height = title_height
+    title_shape.width = title_width
+    title_shape.top = title_top
 
+    # Directly access the title shape's text frame and adjust the font size
+    title_text_frame = title_shape.text_frame
+    for paragraph in title_text_frame.paragraphs:
+        for run in paragraph.runs:
+            run.font.size = Pt(24)  # Set a smaller font size for the title
+
+    # Calculate where the content should start, below the title
+    content_top = title_top + title_height  # Add a small buffer below the title
+
+    # Calculate the content text frame size
+    text_frame_width = prs.slide_width - Inches(1)  # Adjust for margins
+    text_frame_height = prs.slide_height - content_top - Inches(0.5)  # Adjust for bottom margin
+    text_frame = slide.shapes.add_textbox(Inches(0.5), content_top, text_frame_width, text_frame_height).text_frame
+    text_frame.word_wrap = True  # Ensure text wraps within the text frame
     max_paragraph_width = 0
     total_text_frame_height = 0
 
@@ -93,13 +119,13 @@ def create_presentation(prs, text):
                     bold_text = True
                     bold_word = word[2:]
                     r = p.add_run()
-                    r.text = bold_word + " "  #
+                    r.text = bold_word + " "  
                     r.font.bold = True
                 elif bold_text and word.endswith("**"):
                     bold_text = False
                     bold_word = word[:-2]
                     r = p.add_run()
-                    r.text = bold_word
+                    r.text = bold_word + " "
                     r.font.bold = True
                 elif bold_text:
                     r = p.add_run()
@@ -172,7 +198,7 @@ if uploaded_file is not None:
     # Process each slide through Gemini-Pro AI model
     for page_number, title, content in slides_data:
         # Construct the prompt for the AI model
-        prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explaination. Don't need to add titles to the slide"
+        prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
 
         # Send the prompt to the Gemini-Pro AI model
         ai_response = model.generate_content([prompt])
@@ -184,7 +210,7 @@ if uploaded_file is not None:
                 st.text(part.text)
         else:
             st.text("No enhanced content available")
-        create_presentation(prs,
+        create_presentation(prs, title,
                             ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
     prs.save("output.pptx")
     output_data = io.BytesIO()
