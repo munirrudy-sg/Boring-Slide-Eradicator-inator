@@ -6,6 +6,9 @@ import fitz  # PyMuPDF
 from pptx import Presentation
 from pptx.util import Pt
 import io
+from google.cloud import aiplatform
+
+aiplatform.init(project='just-circle-420909', location='us-central1')
 
 def calculate_paragraph_height(paragraph):
     # Approximate the height of the paragraph based on the number of lines and font size
