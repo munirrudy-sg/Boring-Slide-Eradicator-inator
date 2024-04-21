@@ -178,56 +178,82 @@ model = gen_ai.GenerativeModel('gemini-pro')
 # Display the app's title on the page
 st.title("📄 Upload and Process Your PDF")
 
+# Check if the session state already has a 'processed' flag
+if 'processed' not in st.session_state:
+    st.session_state.processed = False
+
+if 'slides_data' not in st.session_state:
+    st.session_state.slides_data = []
+
 # File upload section
 uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
-if uploaded_file is not None:
-    status_message = st.empty()
-    with st.spinner('Processing your slides...'):
-        prs = Presentation()
-        doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
-        slides_data = []
+# Check if file was removed
+if uploaded_file is None:  # If file is removed or not uploaded
+    st.session_state.processed = False  # Reset the processed flag
+    st.session_state.slides_data = []  # Reset slides data if needed
+    st.session_state.output_data = None  # Reset output data
+else:  # File has been uploaded
+    if not st.session_state.processed:
+        status_message = st.empty()
+        with st.spinner('Processing your slides...'):
+            prs = Presentation()
+            doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
+            slides_data = []
 
-        # Process each page
-        for i, page in enumerate(doc):
-            text = page.get_text()
-            # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
-            lines = text.split('\n')
-            title = lines[0] if lines else "No Title"
-            content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
+            # Process each page
+            for i, page in enumerate(doc):
+                text = page.get_text()
+                # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
+                lines = text.split('\n')
+                title = lines[0] if lines else "No Title"
+                content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
 
-            # Append the extracted data to slides_data
-            slides_data.append((i+1, title, content))
+                # Append the extracted data to slides_data
+                slides_data.append((i+1, title, content))
 
-        total_slides = len(slides_data)
-        # Process each slide through Gemini-Pro AI model
-        for i, (page_number, title, content) in enumerate(slides_data, start=1):
-            # Update the status message with the number of slides left
-            status_message.text(f'Processing slide {page_number} of {total_slides}...')
-            # Construct the prompt for the AI model
-            prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
+            st.session_state.slides_data = slides_data
 
-            # Send the prompt to the Gemini-Pro AI model
-            ai_response = model.generate_content([prompt])
+            total_slides = len(slides_data)
+            # Process each slide through Gemini-Pro AI model
+            for i, (page_number, title, content) in enumerate(slides_data, start=1):
+                # Update the status message with the number of slides left
+                status_message.text(f'Processing slide {page_number} of {total_slides}...')
+                # Construct the prompt for the AI model
+                prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
 
-            # Display the enhanced content
+                # Send the prompt to the Gemini-Pro AI model
+                ai_response = model.generate_content([prompt])
+
+                # Display the enhanced content
+                if hasattr(ai_response, 'parts'):
+                    st.session_state[f"enhanced_content_{page_number}"] = ai_response.parts[0].text
+                else:
+                    st.text("No enhanced content available")
+                create_presentation(prs, title,
+                                    ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
+            prs.save("output.pptx")
+            output_data = io.BytesIO()
+            prs.save(output_data)
+            output_data.seek(0)
+            st.session_state.processed = True
+            st.session_state.output_data = output_data
+
+            # Clear the status message once done processing
+            status_message.empty()
+
+    # Display stored enhanced content
+    for page_number, title, _ in st.session_state.slides_data:
+        if f"enhanced_content_{page_number}" in st.session_state:
             st.subheader(f"Page {page_number}: {title}")
-            if hasattr(ai_response, 'parts') and ai_response.parts:
-                for part in ai_response.parts:
-                    st.text(part.text)
-            else:
-                st.text("No enhanced content available")
-            create_presentation(prs, title,
-                                ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
-        prs.save("output.pptx")
-        output_data = io.BytesIO()
-        prs.save(output_data)
-        output_data.seek(0)
+            st.text(st.session_state[f"enhanced_content_{page_number}"])
 
-    # Clear the status message once done processing
-    status_message.empty()
+    if st.session_state.processed:
+        st.success('Processing complete!')
+        st.download_button(label="Download PowerPoint", data=st.session_state.output_data, file_name="output.pptx",
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        
 
-    st.success('Processing complete!')
-    st.download_button(label="Download PowerPoint", data=output_data, file_name="output.pptx",
-                       mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+
+
 
 
