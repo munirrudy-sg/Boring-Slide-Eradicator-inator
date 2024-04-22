@@ -1,0 +1,205 @@
+Slide 1:
+Title: Android Reverse Engineering
+Content:
+ICT 2215 Mobile Security
+A/Prof. Vivek Balachandran
+Vivek.b@singaporetech.edu.sg
+
+
+----------------------------------------
+Slide 2:
+Title: Overview
+Content:
+• Android Reverse Engineering 
+• Android Code Structure
+• Components in Manifest file
+• Dex to Smali
+• Dex to Source code
+• Native code analysis
+• Design a dummy machine language 
+
+
+----------------------------------------
+Slide 3:
+Title: Administrative Matters
+Content:
+• Guest Lecture by DarkNavy from China
+• 19th March 2024
+• 9 AM – 11 AM
+• Hybrid: Face to face + Zoom session
+• The classroom will be announced on LMS
+• Practice CTF session
+• Getting used to the Flag detection 
+• Identifying the level of technical skills of the class
+
+
+----------------------------------------
+Slide 4:
+Title: Introduction to Android Reverse Engineering 
+Content:
+• Reverse engineering is the process of analyzing a system to 
+understand how it works, often with the intent of duplicating or 
+enhancing its functionality.
+• Reverse engineering Android apps is crucial for various purposes such 
+as understanding app behavior, identifying security vulnerabilities, 
+and creating custom modifications.
+4
+
+
+----------------------------------------
+Slide 5:
+Title: Android App Structure
+Content:
+• Android applications are packaged as APK (Android Package) files, 
+which contain all the resources and code required to run the app.
+• APK file structure: APK files consist of 
+• a manifest file (AndroidManifest.xml), 
+• resources (res/)
+•  assets (assets/), 
+• and executable code (DEX files).
+
+
+----------------------------------------
+Slide 6:
+Title: Android Manifest 
+Content:
+• Defines the structure and metadata of the App
+• Nodes for 
+• Activities
+• Services
+• Content Providers
+• Broadcast Receivers
+• Specifies Intent Filters and Permissions
+
+
+----------------------------------------
+Slide 7:
+Title: Android Manifest components 
+Content:
+• Manifest : describes the application package
+• <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+•  xmlns:tools="http://schemas.android.com/tools"
+•  package="com.example.funapp">
+• uses-sdk : Min and Max SDK version supported
+• <uses-sdk
+•  android:minSdkVersion="18"
+•  android:targetSdkVersion="27" />
+• uses-permission: 
+• <uses-permission
+•  android:name="android.permission.CAMERA"
+•  android:maxSdkVersion="18" />
+
+
+----------------------------------------
+Slide 8:
+Title: Android Manifest components 
+Content:
+• Application: specify app metadata
+• <application
+•  android:name=”.FunApp"
+•  android:allowBackup="true"
+•  android:dataExtractionRules="@xml/data_extraction_rules"
+•  android:fullBackupContent="@xml/backup_rules"
+•  android:icon="@drawable/gfgIcon"
+•  android:label="@string/app_name"
+•  android:roundIcon="@mipmap/ic_launcher_round"
+•  android:supportsRtl="true"
+•  android:theme="@android:style/Theme.Light"
+•  android:debuggable="true"
+•  tools:targetApi="31">
+• </application>
+
+
+----------------------------------------
+Slide 9:
+Title: Android Manifest components 
+Content:
+• activity: Activity in the app
+• Activities not declared will not run in the app
+• <activity
+•  android:name=".MainActivity"
+•  android:exported="true">
+• </activity>
+• Intent-filter: type of intent to which the activity, service, or broadcast 
+receiver can send a response
+• <intent-filter>
+•  <action android:name="android.intent.action.MAIN" />
+•  <category android:name="android.intent.category.LAUNCHER" />
+• </intent-filter>
+
+
+----------------------------------------
+Slide 10:
+Title: What to look for?
+Content:
+• Export attribute 
+• <activity
+    android:name=".MainActivity"
+    android:exported="true">
+• This can be accessed and initiated from outside the app 
+• Look for these activities to launch
+• Adb shell –c am start –n packagename/.activityname
+
+
+----------------------------------------
+Slide 11:
+Title: Reverse Engineering 
+Content:
+• Java or Kotlin – compiled to bytecode
+• And converted in DEX
+• Dex-> Smali 
+• Using apktool
+• Disassembled version of the code
+• Native Code
+• Code in C
+• Analysis in Assembly (After reverse engineering)
+
+
+----------------------------------------
+Slide 12:
+Title: Native Code Analysis
+Content:
+• Native code - typically in /Resources/lib…
+• Establish link from the Java code to the native code 
+• Look for API calls to loadLibrary or load in Java code
+• In the Java decompiled code
+• the native function won’t have any implementation and will contain the 
+keyword native.
+
+
+----------------------------------------
+Slide 13:
+Title: Understanding code logic (Dex to Java)
+Content:
+• Convert dex bytecode to source code 
+• JADX, dex2jar (tools)
+• https://decompiler.com 
+• Not a perfect conversion
+• May not be able to re-compile
+• Good enough for logic extraction
+• Fernflower – To help decompile Kotlin code
+
+
+----------------------------------------
+Slide 14:
+Title: Modifying and Patching App
+Content:
+• Reverse to smali 
+• Dex-> Smali
+• Modify smali code directly 
+• Each class will have a seprale smali file 
+• Modify resources, assets. 
+• Re-compile and Re-sign
+• Legal implications! (Read EULA)
+
+
+----------------------------------------
+Slide 15:
+Title: Crash Course on Programming Language 
+Content:
+• We will develop a dummy assembly language 
+• Its binary code 
+• And the conversion from binary to assembly code
+
+
+----------------------------------------

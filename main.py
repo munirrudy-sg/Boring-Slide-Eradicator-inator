@@ -2,10 +2,23 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 import google.generativeai as gen_ai
-import fitz  # PyMuPDF
-from pptx import Presentation
+import fitz  # pip install PyMuPDF
+from pptx import Presentation # pip install python-pptx
 from pptx.util import Pt, Inches
 import io
+import json
+
+def convert_slides_data_to_text(slides_data):
+    # Create a plain text representation of slides_data
+    slides_text = ""
+    for slide in slides_data:
+        slide_number, title, content = slide
+        slides_text += f"Slide {slide_number}:\n"
+        slides_text += f"Title: {title}\n"
+        slides_text += "Content:\n"
+        slides_text += content + "\n"  # Adding a new line for separation
+        slides_text += "\n" + "-"*40 + "\n"  # Separator between slides
+    return slides_text
 
 def calculate_paragraph_height(paragraph):
     # Approximate the height of the paragraph based on the number of lines and font size
@@ -173,7 +186,38 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Set up Google Gemini-Pro AI model
 gen_ai.configure(api_key=GOOGLE_API_KEY)
-model = gen_ai.GenerativeModel('gemini-pro')
+
+# Set up the model
+generation_config = {
+  "temperature": 1,
+  "top_p": 0.95,
+  "top_k": 0,
+  "max_output_tokens": 20000,
+  "response_mime_type": "application/json",
+}
+
+safety_settings = [
+  {
+    "category": "HARM_CATEGORY_HARASSMENT",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_HATE_SPEECH",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+    "threshold": "BLOCK_NONE"
+  },
+  {
+    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+    "threshold": "BLOCK_NONE"
+  },
+]
+
+model = gen_ai.GenerativeModel(model_name="gemini-1.5-pro-latest",
+                              generation_config=generation_config,
+                              safety_settings=safety_settings)
 
 # Display the app's title on the page
 st.title("📄 Upload and Process Your PDF")
@@ -213,44 +257,45 @@ else:  # File has been uploaded
 
             st.session_state.slides_data = slides_data
 
-            total_slides = len(slides_data)
-            # Process each slide through Gemini-Pro AI model
-            for i, (page_number, title, content) in enumerate(slides_data, start=1):
-                # Update the status message with the number of slides left
-                status_message.text(f'Processing slide {page_number} of {total_slides}...')
-                # Construct the prompt for the AI model
-                prompt = f"Explain this slide in greater detail with citations: {content}. Just enhance the slide content with greater explanation. Don't need to add titles to the slide."
+            # Convert slides_data to plain text
+            slides_text = convert_slides_data_to_text(slides_data)
+            
+            # Construct the prompt for the AI model
+            prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide seperated by comma and text in markdown.\n\n{slides_text}."
 
-                # Send the prompt to the Gemini-Pro AI model
-                ai_response = model.generate_content([prompt])
+            # Send the prompt to the Gemini-Pro AI model
+            response = model.generate_content(prompt, request_options={"timeout": 600})
 
-                # Display the enhanced content
-                if hasattr(ai_response, 'parts'):
-                    st.session_state[f"enhanced_content_{page_number}"] = ai_response.parts[0].text
-                else:
-                    st.text("No enhanced content available")
-                create_presentation(prs, title,
-                                    ai_response.parts[0].text if hasattr(ai_response, 'parts') and ai_response.parts else "")
-            prs.save("output.pptx")
-            output_data = io.BytesIO()
-            prs.save(output_data)
-            output_data.seek(0)
-            st.session_state.processed = True
-            st.session_state.output_data = output_data
+            st.text(response.text)
+            
+            # # Iterate through the AI response and create slides based on the JSON data
+            # for slide_key, slide_content in response_data.items():
+            #     title = slide_content.get("Title", "Untitled Slide")
+            #     content = slide_content.get("Content", "No content available")
 
-            # Clear the status message once done processing
-            status_message.empty()
+            #     # Create the PowerPoint slide with the extracted title and content
+            #     create_presentation(prs, title, content)
 
-    # Display stored enhanced content
-    for page_number, title, _ in st.session_state.slides_data:
-        if f"enhanced_content_{page_number}" in st.session_state:
-            st.subheader(f"Page {page_number}: {title}")
-            st.text(st.session_state[f"enhanced_content_{page_number}"])
+    #         prs.save("output.pptx")
+    #         output_data = io.BytesIO()
+    #         prs.save(output_data)
+    #         output_data.seek(0)
+    #         st.session_state.processed = True
+    #         st.session_state.output_data = output_data
 
-    if st.session_state.processed:
-        st.success('Processing complete!')
-        st.download_button(label="Download PowerPoint", data=st.session_state.output_data, file_name="output.pptx",
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
+    #         # Clear the status message once done processing
+    #         status_message.empty()
+
+    # # Display stored enhanced content
+    # for page_number, title, _ in st.session_state.slides_data:
+    #     if f"enhanced_content_{page_number}" in st.session_state:
+    #         st.subheader(f"Page {page_number}: {title}")
+    #         st.text(st.session_state[f"enhanced_content_{page_number}"])
+
+    # if st.session_state.processed:
+    #     st.success('Processing complete!')
+    #     st.download_button(label="Download PowerPoint", data=st.session_state.output_data, file_name="output.pptx",
+    #                     mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
         
 
 
