@@ -256,7 +256,7 @@ generation_config = {
   "temperature": 1,
   "top_p": 0.95,
   "top_k": 0,
-  "max_output_tokens": 20000,
+  "max_output_tokens": 200000,
   "response_mime_type": "application/json",
 }
 
@@ -332,7 +332,7 @@ else:  # File has been uploaded
             prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide seperated by comma and text in markdown.\n\n{slides_text}."
 
             # Send the prompt to the Gemini-Pro AI model
-            response = model.generate_content(prompt, request_options={"timeout": 600})
+            response = model.generate_content(prompt, request_options={"timeout": 60000})
             st.text(response.text)
             print(response.text)
             slides_content=json.loads(response.text)
