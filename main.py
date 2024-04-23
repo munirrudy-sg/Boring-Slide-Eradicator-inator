@@ -7,9 +7,7 @@ import fitz  # pip install PyMuPDF
 from pptx import Presentation  # pip install python-pptx
 from pptx.util import Pt, Inches
 import io
-import json
 import re
-
 
 def convert_slides_data_to_text(slides_data):
     # Create a plain text representation of slides_data
@@ -47,17 +45,21 @@ def apply_bold_format(word, r, bolded_mode):
 
 def create_slide(prs, title, content):
     # Create a new slide with appropriate layout
-    slide_layout = prs.slide_layouts[5]  # Title and content layout
+    slide_layout = prs.slide_layouts[11]  # Title and content layout
     slide = prs.slides.add_slide(slide_layout)
 
     # Set the title text box
     title_shape = slide.shapes.title
     title_shape.text = title  # Assign the title
 
-    # Create the content text box
-    content_shape = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(8), Inches(4))
+    # To find out where to put the text
+    # for shape in slide.placeholders:
+    #     print('%d %s' % (shape.placeholder_format.idx, shape.name))
+
+    # Use the content placeholder to set the content text
+    content_shape = slide.placeholders[14]
     content_text_frame = content_shape.text_frame
-    content_text_frame.word_wrap = True  # Ensure proper word wrapping
+    content_text_frame.word_wrap = True  # Enable word wrapping
 
     # Split content into lines based on newline character
     lines = content.replace("\\n", "\n").split("\n")  # Convert escaped newlines
@@ -91,11 +93,12 @@ def create_slide(prs, title, content):
 
 
 def create_presentation(data):
-    prs = Presentation()
+    theme_path = "Test1.pptx"
+    prs = Presentation(theme_path)
 
-    # Set slide width and height for 16:9 aspect ratio
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.625)
+    # # Set slide width and height for 16:9 aspect ratio
+    # prs.slide_width = Inches(10)
+    # prs.slide_height = Inches(5.625)
 
     for slide_data in data:
         title = slide_data.get("title", "")
