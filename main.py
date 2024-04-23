@@ -1,14 +1,15 @@
+import time
 import os
 import streamlit as st
 from dotenv import load_dotenv
 import google.generativeai as gen_ai
 import fitz  # pip install PyMuPDF
-from pptx import Presentation # pip install python-pptx
+from pptx import Presentation  # pip install python-pptx
 from pptx.util import Pt, Inches
 import io
 import json
 import re
-from pptx.enum.text import PP_ALIGN
+
 
 def convert_slides_data_to_text(slides_data):
     # Create a plain text representation of slides_data
@@ -19,8 +20,9 @@ def convert_slides_data_to_text(slides_data):
         slides_text += f"Title: {title}\n"
         slides_text += "Content:\n"
         slides_text += content + "\n"  # Adding a new line for separation
-        slides_text += "\n" + "-"*40 + "\n"  # Separator between slides
+        slides_text += "\n" + "-" * 40 + "\n"  # Separator between slides
     return slides_text
+
 
 def apply_bold_format(word, r, bolded_mode):
     # Check if the word starts and ends with double asterisks
@@ -41,6 +43,7 @@ def apply_bold_format(word, r, bolded_mode):
     else:
         r.text = word + " "  # Normal text, no bold
     return bolded_mode
+
 
 def create_slide(prs, title, content):
     # Create a new slide with appropriate layout
@@ -66,7 +69,6 @@ def create_slide(prs, title, content):
             p.text = line[2:].strip()  # Remove "##"
             p.font.size = Pt(20)  # Larger font for headings
             p.font.bold = True
-            p.alignment = PP_ALIGN.LEFT  # Align to the left
         elif line.startswith("*"):
             # Bullet point
             p = content_text_frame.add_paragraph()
@@ -102,6 +104,7 @@ def create_presentation(data):
 
     return prs
 
+
 # Load environment variables
 load_dotenv()
 
@@ -119,35 +122,35 @@ gen_ai.configure(api_key=GOOGLE_API_KEY)
 
 # Set up the model
 generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
-  "top_k": 0,
-  "max_output_tokens": 200000,
-  "response_mime_type": "application/json",
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 0,
+    "max_output_tokens": 200000,
+    "response_mime_type": "application/json",
 }
 
 safety_settings = [
-  {
-    "category": "HARM_CATEGORY_HARASSMENT",
-    "threshold": "BLOCK_NONE"
-  },
-  {
-    "category": "HARM_CATEGORY_HATE_SPEECH",
-    "threshold": "BLOCK_NONE"
-  },
-  {
-    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-    "threshold": "BLOCK_NONE"
-  },
-  {
-    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-    "threshold": "BLOCK_NONE"
-  },
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_NONE"
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_NONE"
+    },
 ]
 
 model = gen_ai.GenerativeModel(model_name="gemini-1.5-pro-latest",
-                              generation_config=generation_config,
-                              safety_settings=safety_settings)
+                               generation_config=generation_config,
+                               safety_settings=safety_settings)
 
 # Display the app's title on the page
 st.title("📄 Upload and Process Your PDF")
@@ -158,8 +161,6 @@ if 'processed' not in st.session_state:
 
 if 'slides_data' not in st.session_state:
     st.session_state.slides_data = []
-
-# File upload section
 uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
 # Check if file was removed
 if uploaded_file is None:  # If file is removed or not uploaded
@@ -169,91 +170,98 @@ if uploaded_file is None:  # If file is removed or not uploaded
 else:  # File has been uploaded
     if not st.session_state.processed:
         status_message = st.empty()
-        with st.spinner('Processing your slides...'):
-            prs = Presentation()
-            prs.slide_width = Inches(10)
-            prs.slide_height = Inches(5.625)
+        progress_text = "Initialising..."
+        my_progress = st.progress(0, text=progress_text)
 
+        prs = Presentation()
+        prs.slide_width = Inches(10)
+        prs.slide_height = Inches(5.625)
 
-            doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
-            slides_data = []
+        doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
+        slides_data = []
 
-            # List to store titles extracted from PDF
-            titles = []
+        # List to store titles extracted from PDF
+        titles = []
 
-            # Process each page
-            for i, page in enumerate(doc):
-                text = page.get_text()
-                # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
-                lines = text.split('\n')
-                title = lines[0] if lines else "No Title"
-                content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
+        # Process each page
+        total_pages = len(doc)
+        for i, page in enumerate(doc):
+            text = page.get_text()
+            # Since PDFs don't have explicit titles like PPT, you might need to parse the first line as a title
+            lines = text.split('\n')
+            title = lines[0] if lines else "No Title"
+            content = "\n".join(lines[1:]) if len(lines) > 1 else "No Content"
 
-                # Append the extracted data to slides_data
-                slides_data.append((i+1, title, content))
+            # Append the extracted data to slides_data
+            slides_data.append((i + 1, title, content))
 
-                # Store the title in the titles list
-                titles.append(title)
+            # Store the title in the titles list
+            titles.append(title)
 
-            st.session_state.slides_data = slides_data
+            # Update progress
+            progress = (i + 1) / total_pages * 25
+            my_progress.progress(int(progress), "Processing slides")
+            time.sleep(1)  # Add a delay of 1 second for the progress update
 
-            # Convert slides_data to plain text
-            slides_text = convert_slides_data_to_text(slides_data)
-            
-            # Construct the prompt for the AI model
-            prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide seperated by comma and text in markdown.\n\n{slides_text}."
+        st.session_state.slides_data = slides_data
 
-            # Send the prompt to the Gemini-Pro AI model
-            response = model.generate_content(prompt, request_options={"timeout": 600000}) #10 minutes timeout 
-            st.text(response.text)
-            # print(response.text)
-            # slides_content=json.loads(response.text)
+        # Convert slides_data to plain text
+        slides_text = convert_slides_data_to_text(slides_data)
 
-            content_pattern = r'"content":\s*"([^"]+)"'  # Matches the content within "content": "..."
-            content_matches = re.findall(content_pattern, response.text, re.DOTALL)  # Extract all matches, including newlines
+        # Construct the prompt for the AI model
+        prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide seperated by comma and text in markdown.\n\n{slides_text}."
 
-            # Create a new list with PDF slide titles and AI response slide content
-            PPT_data = []
+        for i in range(25, 80):
+            my_progress.progress(i, "Adding a hint of ai magic~")
+            time.sleep(1)  # Add a delay of 1 second for the progress update
 
-            # Combining both PDF slide titles and AI response slide content
-            if len(titles) == len(content_matches):
-                for i, content in enumerate(content_matches):
-                    slide_number = i + 1
-                    title = titles[i]  # Get the corresponding title from Data A
-                    PPT_data.append({
-                        "slide_number": slide_number,
-                        "title": title,
-                        "content": content
-                    })
-            else:
-                print("Mismatch in the number of titles and content elements.")
-                print(titles)
-                val = 0
-                for content in content_matches:
-                    val =+1
-                    print("START" & val)
-                    print(content)
+        # Send the prompt to the Gemini-Pro AI model
+        response = model.generate_content(prompt, request_options={"timeout": 600000})  # 10 minutes timeout
+        st.text(response.text)
+        # print(response.text)
+        # slides_content=json.loads(response.text)
 
-            # print(PPT_data)
+        content_pattern = r'"content":\s*"([^"]+)"'  # Matches the content within "content": "..."
+        content_matches = re.findall(content_pattern, response.text,
+                                     re.DOTALL)  # Extract all matches, including newlines
 
-            presentation = create_presentation(PPT_data)
-            presentation.save("output.pptx")
-            output_data = io.BytesIO()
-            presentation.save(output_data)
-            output_data.seek(0)
-            st.session_state.processed = True
-            st.session_state.output_data = output_data
+        # Create a new list with PDF slide titles and AI response slide content
+        PPT_data = []
 
-            # Clear the status message once done processing
-            status_message.empty()
+        # Combining both PDF slide titles and AI response slide content
+        if len(titles) == len(content_matches):
+            for i, content in enumerate(content_matches):
+                slide_number = i + 1
+                title = titles[i]  # Get the corresponding title from Data A
+                PPT_data.append({
+                    "slide_number": slide_number,
+                    "title": title,
+                    "content": content
+                })
+        else:
+            print("Mismatch in the number of titles and content elements.")
+            print(titles)
+            val = 0
+            for content in content_matches:
+                val = +1
+                print(f'START {val}')
+                print(content)
+
+        # print(PPT_data)
+
+        presentation = create_presentation(PPT_data)
+        presentation.save("output.pptx")
+        output_data = io.BytesIO()
+        presentation.save(output_data)
+        output_data.seek(0)
+        st.session_state.processed = True
+        st.session_state.output_data = output_data
+
+        # Clear the status message once done processing
+        status_message.empty()
+        my_progress.progress(100, "Finished!!!!")
 
     if st.session_state.processed:
         st.success('Processing complete!')
         st.download_button(label="Download PowerPoint", data=st.session_state.output_data, file_name="output.pptx",
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
-        
-
-
-
-
-
+                           mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
