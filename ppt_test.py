@@ -2,14 +2,14 @@ import json
 from pptx import Presentation
 from pptx.util import Pt,Inches
 
-text = '''
-"- **Reverse engineering** in software involves dissecting a program to understand its inner workings. This often leads to legal disputes, as companies try to protect their intellectual property.\n
-- **Landmark Cases:**\n    * **Atari v. Nintendo (1992):** Atari reverse-engineered Nintendo's lockout chip to create compatible games. The court ruled in favor of Atari, establishing the principle of fair use for reverse engineering when necessary to access an interoperable system. [Citation: Atari Games Corp. v. Nintendo of America Inc., 975 F.2d 832 (Fed. Cir. 1992)]\n    * **Sega v. Accolade (1992
-):** Similar to the Atari case, Accolade reverse-engineered Sega's console to develop compatible games. The court ruled in favor of Accolade, reinforcing the right to reverse engineer for interoperability purposes. [Citation: Sega Enterprises Ltd. v. Accolade, Inc., 977 F.2d 1510 (9th Cir. 1992)]\n    * **P
-hoenix Technologies v. IBM (1988):** Phoenix reverse-engineered IBM's BIOS to create a compatible version. The court found that Phoenix had infringed on IBM's copyright, highlighting the limitations of fair use when direct copying is involved. [Citation: Phoenix Technologies, Ltd. v. International Business 
-Machines Corp., 896 F.2d 1265 (9th Cir. 1988)]\n    * **Connectix v. Sony (2000):** Connectix reverse-engineered Sony's PlayStation BIOS to develop a PlayStation emulator for Macintosh computers. The court ruled in favor of Connectix, emphasizing the legality of reverse engineering for interoperability even
- when involving copyrighted material. [Citation: Sony Computer Entertainment, Inc. v. Connectix Corp., 203 F.3d 596 (9th Cir. 2000)]\n- **Challenges in Legal Battles:** Proving infringement in reverse engineering cases is often difficult due to the technical complexity and the application of fair use principles.\n- **Chinese Wall Method:** To mitigate legal risks, companies may employ a \"Chinese wall\" approach, where a separate team conducts reverse engineering without access to the original source code, aiming to demonstrate independent creation.
-'''
+# text = '''
+# "- **Reverse engineering** in software involves dissecting a program to understand its inner workings. This often leads to legal disputes, as companies try to protect their intellectual property.\n
+# - **Landmark Cases:**\n    * **Atari v. Nintendo (1992):** Atari reverse-engineered Nintendo's lockout chip to create compatible games. The court ruled in favor of Atari, establishing the principle of fair use for reverse engineering when necessary to access an interoperable system. [Citation: Atari Games Corp. v. Nintendo of America Inc., 975 F.2d 832 (Fed. Cir. 1992)]\n    * **Sega v. Accolade (1992
+# ):** Similar to the Atari case, Accolade reverse-engineered Sega's console to develop compatible games. The court ruled in favor of Accolade, reinforcing the right to reverse engineer for interoperability purposes. [Citation: Sega Enterprises Ltd. v. Accolade, Inc., 977 F.2d 1510 (9th Cir. 1992)]\n    * **P
+# hoenix Technologies v. IBM (1988):** Phoenix reverse-engineered IBM's BIOS to create a compatible version. The court found that Phoenix had infringed on IBM's copyright, highlighting the limitations of fair use when direct copying is involved. [Citation: Phoenix Technologies, Ltd. v. International Business 
+# Machines Corp., 896 F.2d 1265 (9th Cir. 1988)]\n    * **Connectix v. Sony (2000):** Connectix reverse-engineered Sony's PlayStation BIOS to develop a PlayStation emulator for Macintosh computers. The court ruled in favor of Connectix, emphasizing the legality of reverse engineering for interoperability even
+#  when involving copyrighted material. [Citation: Sony Computer Entertainment, Inc. v. Connectix Corp., 203 F.3d 596 (9th Cir. 2000)]\n- **Challenges in Legal Battles:** Proving infringement in reverse engineering cases is often difficult due to the technical complexity and the application of fair use principles.\n- **Chinese Wall Method:** To mitigate legal risks, companies may employ a \"Chinese wall\" approach, where a separate team conducts reverse engineering without access to the original source code, aiming to demonstrate independent creation.
+# '''
 
 
 def apply_bold_format(word, r,bolded_mode):
