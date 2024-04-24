@@ -2,101 +2,78 @@ import json
 from pptx import Presentation
 from pptx.util import Pt,Inches
 
-# text = '''
-# "- **Reverse engineering** in software involves dissecting a program to understand its inner workings. This often leads to legal disputes, as companies try to protect their intellectual property.\n
-# - **Landmark Cases:**\n    * **Atari v. Nintendo (1992):** Atari reverse-engineered Nintendo's lockout chip to create compatible games. The court ruled in favor of Atari, establishing the principle of fair use for reverse engineering when necessary to access an interoperable system. [Citation: Atari Games Corp. v. Nintendo of America Inc., 975 F.2d 832 (Fed. Cir. 1992)]\n    * **Sega v. Accolade (1992
-# ):** Similar to the Atari case, Accolade reverse-engineered Sega's console to develop compatible games. The court ruled in favor of Accolade, reinforcing the right to reverse engineer for interoperability purposes. [Citation: Sega Enterprises Ltd. v. Accolade, Inc., 977 F.2d 1510 (9th Cir. 1992)]\n    * **P
-# hoenix Technologies v. IBM (1988):** Phoenix reverse-engineered IBM's BIOS to create a compatible version. The court found that Phoenix had infringed on IBM's copyright, highlighting the limitations of fair use when direct copying is involved. [Citation: Phoenix Technologies, Ltd. v. International Business 
-# Machines Corp., 896 F.2d 1265 (9th Cir. 1988)]\n    * **Connectix v. Sony (2000):** Connectix reverse-engineered Sony's PlayStation BIOS to develop a PlayStation emulator for Macintosh computers. The court ruled in favor of Connectix, emphasizing the legality of reverse engineering for interoperability even
-#  when involving copyrighted material. [Citation: Sony Computer Entertainment, Inc. v. Connectix Corp., 203 F.3d 596 (9th Cir. 2000)]\n- **Challenges in Legal Battles:** Proving infringement in reverse engineering cases is often difficult due to the technical complexity and the application of fair use principles.\n- **Chinese Wall Method:** To mitigate legal risks, companies may employ a \"Chinese wall\" approach, where a separate team conducts reverse engineering without access to the original source code, aiming to demonstrate independent creation.
-# '''
+# text = '''- **Reverse Engineering in the Real World:**\\n   * Historically, software reverse engineering has been at the center of numerous legal disputes. Companies like Atari, Accolade, Phoenix, and Connectix engaged in reverse engineering to
+# #  achieve compatibility with competitor's systems, leading to landmark cases.  \\n   * These cases often revolved around copyright infringement and the extent to which companies could analyze and utilize competitors' software to create compatible products. \\n- **Legal Precedents:**\\n   * Interestingly, man
+# # y of these cases were ruled in favor of reverse engineering, establishing a legal basis for the practice under certain conditions.  \\n   * Courts recognized the importance of interoperability and innovation, allowing companies to reverse engineer software for legitimate purposes such as compatibility, secu
+# # rity analysis, and research. \\n- **Challenges and the Chinese Wall Method:**\\n   * Proving that reverse engineering was done without infringing copyright can be challenging.  \\n   * The 'Chinese Wall' method emerged as a strategy to address this concern. It involves separating the team performing reverse engineering from the development team to prevent the direct use of copyrighted material. \\n   * This method aimed to demonstrate good faith efforts to avoid copyright infringement during the reverse engineering process.'''
 
 
-def apply_bold_format(word, r,bolded_mode):
-    if word.startswith("**") and (word.endswith(":**") or word.endswith("**:")):
-        bold_word = word[2:-3]
-        r.text = bold_word + ": "
+def apply_bold_format(word, r, bolded_mode):
+    # Check if the word starts and ends with double asterisks
+    if word.startswith("**") and word.endswith("**"):
+        r.text = word[2:-2]  # Remove outer asterisks
         r.font.bold = True
     elif word.startswith("**"):
-        bold_word = word[2:]
-        r.text = bold_word + " "
+        r.text = word[2:] + " "  # Remove leading asterisks
         r.font.bold = True
-        bolded_mode=True
-    elif word == "*":
-        r.text = "•" + " "  # Replace asterisk with bullet point
+        bolded_mode = True  # Switch to bolded mode
+    elif word.endswith("**"):
+        r.text = word[:-2] + " "  # Remove trailing asterisks
+        r.font.bold = True
+        bolded_mode = False  # Exit bolded mode
     elif bolded_mode:
-        if word.endswith("**:") or word.endswith(":**"):
-            bold_word = word[:-3]
-            r.text = bold_word + ":"
-            r.font.bold = True
-            bolded_mode = False
-        else:
-            r.text = word + " "
-            r.font.bold = True
+        r.text = word + " "  # Apply bolded mode to other words
+        r.font.bold = True
     else:
-        r.text = word + " "
-    return bolded_mode  # Return the updated bolded_mode value
-def create_slide(prs, title, content):
-    # Create a blank slide with custom placeholders
-    slide_layout = prs.slide_layouts[6]  # Choose an appropriate layout index
+        r.text = word + " "  # Normal text, no bold
+    return bolded_mode
 
+
+def create_slide(prs, title, content):
+    # Create a new slide with appropriate layout
+    slide_layout = prs.slide_layouts[5]  # Title and content layout
     slide = prs.slides.add_slide(slide_layout)
 
-    # Set the title
-    title_shape = slide.shapes.add_textbox(Inches(0.25), Inches(0.25), Inches(9), Inches(0.5))
-    title_text_frame = title_shape.text_frame
-    title_text_frame.word_wrap = True
-    title_text_frame.text = title
+    # Set the title text box
+    title_shape = slide.shapes.title
+    title_shape.text = title  # Assign the title
 
-    # Set the content
-    content_shape = slide.shapes.add_textbox(Inches(0.25), Inches(0.75), Inches(9), Inches(4))
+    # Create the content text box
+    content_shape = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(8), Inches(4))
     content_text_frame = content_shape.text_frame
-    content_text_frame.word_wrap = True
+    content_text_frame.word_wrap = True  # Ensure proper word wrapping
 
-    # Split content into lines
-    lines = content.split('\n')
+    # Split content into lines based on newline character
+    lines = content.replace("\\n", "\n").split("\n")  # Convert escaped newlines
 
-    # Loop through each line
     for line in lines:
-        # Check if the line starts with "##" indicating a heading
         if line.startswith("##"):
-            # Create a new paragraph for heading
+            # Heading line
             p = content_text_frame.add_paragraph()
-            # Add the heading text
-            p.text = line[2:].strip()  # Remove the "##" and any leading/trailing whitespace
-            # Set font size, bold, and center alignment for heading
-            p.font.size = Pt(20)
+            p.text = line[2:].strip()  # Remove "##"
+            p.font.size = Pt(20)  # Larger font for headings
             p.font.bold = True
-            p.alignment = 1  # 0 for left alignment, 1 for center, 2 for right
         elif line.startswith("*"):
-            # Create a new paragraph for smaller font size text
+            # Bullet point
             p = content_text_frame.add_paragraph()
-            # Add the text without the starting asterisk and leading/trailing whitespace
             words = line.split()
             bolded_mode = False
             for word in words:
                 r = p.add_run()
-                bolded_mode = apply_bold_format(word, r, bolded_mode)  # Update bolded_mode
-            # Set font size for smaller text
+                bolded_mode = apply_bold_format(word, r, bolded_mode)  # Apply bolding
             for run in p.runs:
-                run.font.size = Pt(12)  # Adjust font size as needed
+                run.font.size = Pt(12)  # Smaller font for bullet points
         else:
-            # Create a new paragraph for regular text
+            # Normal text
             p = content_text_frame.add_paragraph()
             words = line.split()
-
             bolded_mode = False
             for word in words:
+                if(word=="**Challenges"):
+                    print("ASD")
                 r = p.add_run()
-                apply_bold_format(word, r,bolded_mode)
-
-
-    # Exclude font size adjustment for lines starting with asterisk
-    for shape in slide.shapes:
-        for paragraph in shape.text_frame.paragraphs:
-            if not paragraph.text.startswith("*"):
-                for run in paragraph.runs:
-                    run.font.size = Pt(14)  # Adjust font size as needed
+                apply_bold_format(word, r, bolded_mode)  # Apply bold if needed
+                r.font.size = Pt(14)  # Standard font size for regular text
 
 
 def create_presentation(data):
@@ -118,7 +95,12 @@ data=[
     {
         "slide_number": 1,
         "title": "Android Reverse Engineering",
-        "content": "## Android Reverse Engineering: A Deep Dive\n\nThis course, ICT 2215 Mobile Security, delves into the intricate world of Android app analysis. Led by A/Prof. Vivek Balachandran (Vivek.b@singaporetech.edu.sg), we will explore techniques to understand app functionality, identify vulnerabilities, and potentially modify their behavior. Get ready to unravel the secrets behind Android applications!"
+        "content": '''
+        - **Reverse Engineering in the Real World:**\\n   * Historically, software reverse engineering has been at the center of numerous legal disputes. Companies like Atari, Accolade, Phoenix, and Connectix engaged in reverse engineering to
+#  achieve compatibility with competitor's systems, leading to landmark cases.  \\n   * These cases often revolved around copyright infringement and the extent to which companies could analyze and utilize competitors' software to create compatible products. \\n- **Legal Precedents:**\\n   * Interestingly, man
+# y of these cases were ruled in favor of reverse engineering, establishing a legal basis for the practice under certain conditions.  \\n   * Courts recognized the importance of interoperability and innovation, allowing companies to reverse engineer software for legitimate purposes such as compatibility, secu
+# rity analysis, and research. \\n- **Challenges and the Chinese Wall Method:**\\n   * Proving that reverse engineering was done without infringing copyright can be challenging.  \\n   * The 'Chinese Wall' method emerged as a strategy to address this concern. It involves separating the team performing reverse engineering from the development team to prevent the direct use of copyrighted material. \\n   * This method aimed to demonstrate good faith efforts to avoid copyright infringement during the reverse engineering process.
+        '''
     },
     {
         "slide_number": 2,

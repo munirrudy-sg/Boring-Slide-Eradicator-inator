@@ -92,7 +92,7 @@ def create_slide(prs, title, content):
             bolded_mode = False
             for word in words:
                 r = p.add_run()
-                apply_bold_format(word, r, bolded_mode)  # Apply bold if needed
+                bolded_mode = apply_bold_format(word, r, bolded_mode)  # Apply bold if needed
                 r.font.size = Pt(14)  # Standard font size for regular text
 
 
@@ -177,6 +177,20 @@ st.title("📄 Upload and Process Your PDF")
 # File uploader
 uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
 
+# Text input for custom prompt
+custom_prompt_text = st.text_input("Enter materials to refer from (optional):")
+
+# Check if file was removed
+if uploaded_file is None:  # If file is removed or not uploaded
+    st.session_state.processed = False  # Reset the processed flag
+    st.session_state.slides_data = []  # Reset slides data if needed
+    st.session_state.output_data = None  # Reset output data
+else:  # File has been uploaded
+    if not st.session_state.processed:
+        status_message = st.empty()
+        progress_text = "Initialising..."
+        my_progress = st.progress(0, text=progress_text)
+
 # Create a dropdown for selecting a theme
 selected_theme = st.selectbox("Select a Theme", list(theme_dict.keys()))
 
@@ -213,8 +227,12 @@ def process_pdf(uploaded_file):
 
     st.session_state.slides_data = slides_data
 
-    # Convert slides_data to plain text
-    slides_text = convert_slides_data_to_text(slides_data)
+    # Construct the prompt for the AI model
+
+    if custom_prompt_text:
+        prompt = f"The below text is extracted text from lecture slides. Based on the input text '{custom_prompt_text}', prioritize knowledge accordingly. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide separated by comma and text in markdown.\n\n{slides_text}."
+    else:
+        prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide separated by comma and text in markdown.\n\n{slides_text}."
 
     # Construct the prompt for the AI model
     prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide seperated by comma and text in markdown.\n\n{slides_text}."
@@ -244,12 +262,7 @@ def process_pdf(uploaded_file):
     else:
         print("Mismatch in the number of titles and content elements.")
 
-    presentation = create_presentation(PPT_data)
-    presentation.save("output.pptx")
-    output_data = io.BytesIO()
-    presentation.save(output_data)
-    output_data.seek(0)
-    st.session_state.output_data = output_data
+        print(PPT_data)
 
     # Clear the status message once done processing
     status_message.empty()
