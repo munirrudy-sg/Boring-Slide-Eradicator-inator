@@ -51,15 +51,15 @@ def create_slide(prs, title, content):
     layout, text_placeholder = theme_dict.get(selected_theme, (11, 14))  # Default to (11, 14)
 
     # Create a new slide with appropriate layout
-    slide_layout = prs.slide_layouts[5]  # Title and content layout
+    slide_layout = prs.slide_layouts[layout]  # Title and content layout
     slide = prs.slides.add_slide(slide_layout)
 
     # Set the title text box
     title_shape = slide.shapes.title
     title_shape.text = title  # Assign the title
 
-    # Create the content text box
-    content_shape = slide.shapes.add_textbox(Inches(1), Inches(1.5), Inches(8), Inches(4))
+    # Use the content placeholder to set the content text
+    content_shape = slide.placeholders[text_placeholder]
     content_text_frame = content_shape.text_frame
     content_text_frame.word_wrap = True  # Ensure proper word wrapping
 
@@ -95,11 +95,12 @@ def create_slide(prs, title, content):
 
 
 def create_presentation(data):
-    prs = Presentation()
-
-    # Set slide width and height for 16:9 aspect ratio
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.625)
+    # Retrieve the theme selected by the user
+    selected_theme = st.session_state.get("selected_theme", "Theme1")
+    
+    # Append ".pptx" to create the theme path
+    theme_path = f"{selected_theme}.pptx"
+    prs = Presentation(theme_path)
 
     for slide_data in data:
         title = slide_data.get("title", "")
@@ -154,9 +155,9 @@ def process_pdf(uploaded_file):
         prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide separated by comma and text in markdown.\n\n.{slides_text}"
 
 
-    # for i in range(25, 80):
-    #     my_progress.progress(i, "Adding a hint of ai magic~")
-    #     time.sleep(1)
+    for i in range(25, 80):
+        my_progress.progress(i, "Adding a hint of ai magic~")
+        time.sleep(1)
 
     # Send the prompt to the AI model
     response = model.generate_content(prompt, request_options={"timeout": 600000})
