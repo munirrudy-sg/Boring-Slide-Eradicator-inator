@@ -4,3 +4,4 @@ streamlit==1.30.0
 PyMuPDF
 python-pptx
 streamlit-image-select
+streamlit_tags
