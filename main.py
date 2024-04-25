@@ -9,6 +9,7 @@ from pptx.util import Pt, Inches
 import io
 import json
 import re
+from streamlit_image_select import image_select
 
 
 def convert_slides_data_to_text(slides_data):
@@ -99,7 +100,7 @@ def create_presentation(data):
     selected_theme = st.session_state.get("selected_theme", "Theme1")
     
     # Append ".pptx" to create the theme path
-    theme_path = f"{selected_theme}.pptx"
+    theme_path = f"theme_pptx\\{selected_theme}.pptx"
     prs = Presentation(theme_path)
 
     for slide_data in data:
@@ -111,9 +112,10 @@ def create_presentation(data):
 
 # Dictionary to store theme-based layout and text_placeholder mappings
 theme_dict = {
-    "Theme1": (11, 14),
+    "Theme1": (0, 1),
     "Theme2": (11, 14),
-    "Theme3": (13, 16),
+    "Theme3": (0, 10),
+    "Theme4": (0, 10),
 }
 
 def process_pdf(uploaded_file):
@@ -269,8 +271,10 @@ else:  # File has been uploaded
         progress_text = "Initialising..."
         my_progress = st.progress(0, text=progress_text)
 
-# Create a dropdown for selecting a theme
-selected_theme = st.selectbox("Select a Theme", list(theme_dict.keys()))
+selected_theme = image_select(
+    label="Select a theme",
+    images=[f"theme_thumbnails\\{theme}.jpg" for theme in theme_dict]
+)
 
 # Create a button to process the PDF
 process_button = st.button("Process PDF")
@@ -281,7 +285,7 @@ if process_button:
         st.error("Please upload a PDF before processing.")
     else:
         # Save the selected theme in session state
-        st.session_state.selected_theme = selected_theme
+        st.session_state.selected_theme = str(selected_theme.split("\\")[-1].split(".")[0])
 
         # Process the PDF if the file is uploaded
         output_data = process_pdf(uploaded_file)

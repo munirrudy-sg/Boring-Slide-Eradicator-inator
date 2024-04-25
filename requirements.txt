@@ -1,3 +1,6 @@
 python-dotenv==1.0.1
 google-generativeai==0.5.2
 streamlit==1.30.0
+PyMuPDF
+python-pptx
+streamlit-image-select
