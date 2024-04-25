@@ -10,6 +10,7 @@ import io
 import json
 import re
 from streamlit_image_select import image_select
+from streamlit_tags import st_tags
 
 
 def convert_slides_data_to_text(slides_data):
@@ -210,7 +211,6 @@ def process_pdf(uploaded_file):
         else:
             # Indicate mismatch and retry
             retry_count += 1
-            print(PPT_data)
 
     if retry_count == max_retries and not success:
         status_message.empty()
@@ -267,16 +267,44 @@ model = gen_ai.GenerativeModel(model_name="gemini-1.5-pro-latest",
 # Display the app's title on the page
 st.title("📄 Upload and Process Your PDF")
 
+# Sidebar
+st.sidebar.markdown("""
+## Welcome to Slide Enhancer! 👋
+
+Tired of staring at confusing lecture slides like a dog watching fireworks? 😵‍💫 We were too! That's why we created Slide Enhancer, your Gemini-powered tool for turning those cryptic slides into clear, understandable summaries. 🧠✨
+
+### Here's the magic you can do:
+- **Import your PDF files**: Toss in those troublesome lecture slides.
+- **Give Gemini some context**: Tell it what materials to reference for explanations.
+- **Exclude unnecessary slides**: Skip the title pages and "thank you" slides.
+- **Choose your theme**: Because even explanations deserve a little style.
+- **Hit "Process PDF"** and watch the magic happen! ✨
+
+Get ready to say goodbye to slide-induced headaches and hello to understanding!
+""")
+
+
 # Check if the session state already has a 'processed' flag
 if 'processed' not in st.session_state:
     st.session_state.processed = False
 
 if 'slides_data' not in st.session_state:
     st.session_state.slides_data = []
-uploaded_file = st.file_uploader("Choose a PDF file", type=['pdf'])
+uploaded_file = st.file_uploader("Step 1: Choose a PDF file", type=['pdf'])
+
+keywords = st_tags(
+    label= "Step 2: Enter materials to refer from (optional):",
+    text='Press enter to add',
+    value=[],
+    suggestions=['Patterns of Enterprise Application Architecture'],
+    maxtags = 5,
+    key='0')
+
+# Convert the list to a comma-separated string
+custom_prompt_text = ", ".join(keywords)
 
 # Text input for custom prompt
-custom_prompt_text = st.text_input("Enter materials to refer from (optional):")
+custom_prompt_text = st.text_input("Step 2: Enter materials to refer from (optional):", help="Enter your textbooks here if you want Gemini to use them")
 
 # Check if file was removed
 if uploaded_file is None:  # If file is removed or not uploaded
@@ -290,7 +318,7 @@ else:  # File has been uploaded
         my_progress = st.progress(0, text=progress_text)
 
 selected_theme = image_select(
-    label="Select a theme",
+    label="Step 3: Select a theme",
     images=[f"theme_thumbnails\\{theme}.jpg" for theme in theme_dict]
 )
 
