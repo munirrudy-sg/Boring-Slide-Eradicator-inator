@@ -156,48 +156,66 @@ def process_pdf(uploaded_file):
     else:
         prompt = f"The below text is extracted text from lecture slides. Currently, the slides are bad and I want you to replace each slide content with your more well-explained version. Don't just explain it point by point. I want you to understand what the slide is trying to say then explain it in a way that can be easily understood by a university student. Include citations. Don't just write in plain text, use bullet points or anything that makes the student read and understand the slide easily. Do this for every slide but don't add new slides. Your output should be the slide number, title and slide content. Each slide separated by comma and text in markdown.\n\n.{slides_text}"
 
+    # Loop to manage retries
+    retry_count = 0
+    max_retries = 3
+    success = False
 
-    for i in range(25, 80):
-        my_progress.progress(i, "Adding a hint of ai magic~")
-        time.sleep(1)
+    while retry_count < max_retries and not success:
 
-    # Send the prompt to the AI model
-    response = model.generate_content(prompt, request_options={"timeout": 600000})
-    st.text(response.text)
+        for i in range(25, 80):
+            if retry_count == 0:
+                my_progress.progress(i, "Adding a hint of ai magic~")
+                time.sleep(1)
+            else:
+                my_progress.progress(i, "Resending prompt due to unexpected error...")
+                time.sleep(1)
 
-    content_pattern = r'"content":\s*"([^"]+)"'
-    content_matches = re.findall(content_pattern, response.text, re.DOTALL)
+        # Send the prompt to the AI model
+        response = model.generate_content(prompt, request_options={"timeout": 600000})
+        st.text(response.text)
 
-    # Create a new list with PDF slide titles and AI response slide content
-    PPT_data = []
-    if len(titles) == len(content_matches):
-        for i, content in enumerate(content_matches):
-            slide_number = i + 1
-            title = titles[i]
-            PPT_data.append({
-                "slide_number": slide_number,
-                "title": title,
-                "content": content
-            })
-    else:
-        print("Mismatch in the number of titles and content elements.")
-        print(PPT_data)
+        content_pattern = r'"content":\s*"([^"]+)"'
+        content_matches = re.findall(content_pattern, response.text, re.DOTALL)
 
-    # Create PowerPoint presentation and save it
-    presentation = create_presentation(PPT_data)
-    output_data = io.BytesIO()
-    presentation.save(output_data)
-    output_data.seek(0)
-    st.session_state.processed = True
-    st.session_state.output_data = output_data
+        # Create a new list with PDF slide titles and AI response slide content
+        PPT_data = []
+        if len(titles) == len(content_matches):
+            for i, content in enumerate(content_matches):
+                slide_number = i + 1
+                title = titles[i]
+                PPT_data.append({
+                    "slide_number": slide_number,
+                    "title": title,
+                    "content": content
+                })
+            
+            # Create PowerPoint presentation and save it
+            presentation = create_presentation(PPT_data)
+            output_data = io.BytesIO()
+            presentation.save(output_data)
+            output_data.seek(0)
+            st.session_state.processed = True
+            st.session_state.output_data = output_data
 
-    # Clear the status message once done processing
-    status_message.empty()
-    my_progress.progress(100, "Finished!!!!")
+            # Clear the status message once done processing
+            status_message.empty()
+            my_progress.progress(100, "Finished!!!!")
 
-    # Return the output data
-    return output_data
+            success = True
 
+            # Return the output data
+            return output_data
+
+        else:
+            # Indicate mismatch and retry
+            retry_count += 1
+            print(PPT_data)
+
+    if retry_count == max_retries and not success:
+        status_message.empty()
+        my_progress.progress(100, "Retry limit reached, unable to process.")
+        return None
 
 # Load environment variables
 load_dotenv()
