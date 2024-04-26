@@ -146,8 +146,7 @@ theme_dict = {
 def process_pdf(uploaded_file):
     # Process PDF code (your existing code)
     status_message = st.empty()
-    progress_text = "Initialising..."
-    my_progress = st.progress(0, text=progress_text)
+    my_progress = st.progress(0, text="Activating the Boring-Slide-Eradicator-inator...")
 
     doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
     slides_data = []
@@ -169,7 +168,7 @@ def process_pdf(uploaded_file):
         original_content.append(content)
 
         progress = (i + 1) / total_pages * 25
-        my_progress.progress(int(progress), "Processing slides")
+        my_progress.progress(int(progress), "Perry the Platypus is reviewing your slides!")
         time.sleep(1)
 
 
@@ -201,10 +200,10 @@ def process_pdf(uploaded_file):
 
         for i in range(25, 80):
             if retry_count == 0:
-                my_progress.progress(i, "Adding a hint of ai magic~")
+                my_progress.progress(i, "Supercharging your presentation with Gemini juice!")
                 time.sleep(1)
             else:
-                my_progress.progress(i, "Resending prompt due to unexpected error...")
+                my_progress.progress(i, "Uh oh! Resending prompt due to unexpected error...")
                 time.sleep(1)
 
         # Send the prompt to the AI model
@@ -246,7 +245,7 @@ def process_pdf(uploaded_file):
 
             # Clear the status message once done processing
             status_message.empty()
-            my_progress.progress(100, "Finished!!!!")
+            my_progress.progress(100, "And POOF! Your slides is slides-tastic!")
 
             success = True
 
@@ -259,7 +258,7 @@ def process_pdf(uploaded_file):
 
     if retry_count == max_retries and not success:
         status_message.empty()
-        my_progress.progress(100, "Retry limit reached, unable to process.")
+        my_progress.progress(100, "Error occured! This usually never happens but let's try again in a moment.")
         return None
 
 # Load environment variables
@@ -267,8 +266,8 @@ load_dotenv()
 
 # Configure Streamlit page settings
 st.set_page_config(
-    page_title="AI PDF Processor",
-    page_icon=":file_folder:",  # Favicon emoji
+    page_title="Boring-Slide-Eradicator-inator",
+    page_icon="🧙‍♂️",  # Favicon emoji
     layout="centered",  # Page layout option
 )
 
@@ -310,15 +309,17 @@ model = gen_ai.GenerativeModel(model_name="gemini-1.5-pro-latest",
                                safety_settings=safety_settings)
 
 # Display the app's title on the page
-st.title("📄 Upload and Process Your PDF")
+st.title("🧙‍♂️ Boring-Slide-Eradicator-inator")
 
 # Sidebar
 st.sidebar.markdown("""
-## Welcome to Slide Enhancer! 👋
+## Greetings! 👋
 
-Tired of staring at confusing lecture slides like a dog watching fireworks? 😵‍💫 We were too! That's why we created Slide Enhancer, your Gemini-powered tool for turning those cryptic slides into clear, understandable summaries. 🧠✨
+Is staring at confusing lecture slides making you feel like Perry the Platypus trapped in a cage? ‍  Been there, done that!
 
-### Here's the magic you can do:
+That's why we invented the **Boring-Slide-Eradicator-inator**!   This super-cool Gemini-powered tool uses some serious science to transform those cryptic slides into clear, understandable slides. ✨
+
+### Here's how this inator works its magic:
 - **Import your PDF files**: Toss in those troublesome lecture slides.
 - **Give Gemini some context**: Tell it what materials to reference for explanations.
 - **Exclude unnecessary slides**: Skip the title pages and "thank you" slides.
@@ -335,19 +336,19 @@ if 'processed' not in st.session_state:
 
 if 'slides_data' not in st.session_state:
     st.session_state.slides_data = []
-uploaded_file = st.file_uploader("Step 1: Choose a PDF file", type=['pdf'])
+uploaded_file = st.file_uploader("Step 1: Choose a boring PDF file", type=['pdf'])
 store_pdf_in_session(uploaded_file)
 
-keywords = st_tags(
-    label= "Step 2: Enter materials to refer from (optional):",
-    text='Press enter to add',
-    value=[],
-    suggestions=['Patterns of Enterprise Application Architecture'],
-    maxtags = 5,
-    key='0')
+# keywords = st_tags(
+#     label= "Step 2: Enter materials to refer from (optional):",
+#     text='Press enter to add',
+#     value=[],
+#     suggestions=['Patterns of Enterprise Application Architecture'],
+#     maxtags = 5,
+#     key='0')
 
-# Convert the list to a comma-separated string
-custom_prompt_text = ", ".join(keywords)
+# # Convert the list to a comma-separated string
+# custom_prompt_text = ", ".join(keywords)
 
 # Text input for custom prompt
 custom_prompt_text = st.text_input("Step 2: Enter materials to refer from (optional):", help="Enter your textbooks here if you want Gemini to use them")
@@ -362,15 +363,7 @@ if uploaded_file is None or uploaded_file.size == 0:  # If file is removed or em
 
 else:  # File has been uploaded
     if not st.session_state.processed:
-        status_message = st.empty()
-        progress_text = "Initialising..."
-        my_progress = st.progress(0, text=progress_text)
         store_pdf_in_session(uploaded_file)
-
-selected_theme = image_select(
-    label="Step 3: Select a theme",
-    images=[f"theme_thumbnails\\{theme}.jpg" for theme in theme_dict]
-)
 
 # Use the stored PDF to populate the dropdown for excluding slides
 if 'pdf_doc' in st.session_state:
@@ -384,11 +377,15 @@ if 'pdf_doc' in st.session_state:
 else:
     slide_options = []
 
-exclude_slides = st.multiselect("Step 4: Select slides to exclude (optional):", slide_options)
+exclude_slides = st.multiselect("Step 3: Select slides to exclude (optional):", slide_options, help="These slides would not be enhanced by Gemini")
 
+selected_theme = image_select(
+    label="Step 4: Spice up your PPT",
+    images=[f"theme_thumbnails\\{theme}.jpg" for theme in theme_dict]
+)
 
 # Create a button to process the PDF
-process_button = st.button("Process PDF")
+process_button = st.button("Zap that PDF!")
 
 # When the button is pressed
 if process_button:
