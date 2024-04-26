@@ -25,6 +25,25 @@ def convert_slides_data_to_text(slides_data):
         slides_text += "\n" + "-" * 40 + "\n"  # Separator between slides
     return slides_text
 
+# Function to open the PDF and store it in session state
+def store_pdf_in_session(uploaded_file):
+    # Check if a file has been uploaded
+    if uploaded_file is not None:
+        try:
+            # Ensure the file pointer is at the start
+            uploaded_file.seek(0)
+            # Open the PDF and store it in session state
+            doc = fitz.open("pdf", uploaded_file.read())
+            st.session_state['pdf_doc'] = doc
+        except fitz.EmptyFileError:
+            st.error("Cannot open the PDF stream. Please upload a valid PDF.")
+    else:
+        # # Handle the case where no file is uploaded
+        # Reset or clear any existing PDF data in the session state
+        if 'pdf_doc' in st.session_state:
+            del st.session_state['pdf_doc']
+
+
 
 def apply_bold_format(word, r, bolded_mode):
     # Check if the word starts and ends with double asterisks
@@ -66,7 +85,8 @@ def create_slide(prs, title, content):
     content_text_frame.word_wrap = True  # Ensure proper word wrapping
 
     # Split content into lines based on newline character
-    lines = content.replace("\\n", "\n").split("\n")  # Convert escaped newlines
+    lines = content.replace("\\n", "\n").split("\n") # Convert escaped newlines
+
 
     for line in lines:
         if line.startswith("##"):
@@ -99,9 +119,13 @@ def create_slide(prs, title, content):
 def create_presentation(data):
     # Retrieve the theme selected by the user
     selected_theme = st.session_state.get("selected_theme", "Theme1")
+
+    # Create the absolute path to the theme
+    theme_dir = os.path.abspath("theme_pptx")
+    theme_path = os.path.join(theme_dir, f"{selected_theme}.pptx")
     
     # Append ".pptx" to create the theme path
-    theme_path = f"theme_pptx\\{selected_theme}.pptx"
+    # theme_path = f"theme_pptx\\{selected_theme}.pptx"
     prs = Presentation(theme_path)
 
     for slide_data in data:
@@ -128,8 +152,9 @@ def process_pdf(uploaded_file):
     doc = fitz.open("pdf", uploaded_file.read())  # Load the PDF file
     slides_data = []
 
-    # List to store titles extracted from PDF
+# List to store titles extracted from PDF
     titles = []
+    original_content = []
 
     # Process each page
     total_pages = len(doc)
@@ -141,12 +166,22 @@ def process_pdf(uploaded_file):
 
         slides_data.append((i + 1, title, content))
         titles.append(title)
+        original_content.append(content)
 
         progress = (i + 1) / total_pages * 25
         my_progress.progress(int(progress), "Processing slides")
         time.sleep(1)
 
+
     st.session_state.slides_data = slides_data
+
+    # Exclude selected slides
+
+    # Get the index of the selected options in slide_options
+    exclude_slide_indices = [slide_options.index(option) for option in exclude_slides]
+    exclude_slide_numbers = [index + 1 for index in exclude_slide_indices]
+
+    st.session_state.exclude_slide_numbers = exclude_slide_numbers
 
     # Convert slides_data to plain text
     slides_text = convert_slides_data_to_text(slides_data)
@@ -185,11 +220,21 @@ def process_pdf(uploaded_file):
             for i, content in enumerate(content_matches):
                 slide_number = i + 1
                 title = titles[i]
-                PPT_data.append({
-                    "slide_number": slide_number,
-                    "title": title,
-                    "content": content
-                })
+                original_content_text = original_content[i]
+                if slide_number in exclude_slide_numbers:
+                    PPT_data.append({
+                        "slide_number": slide_number,
+                        "title": title,
+                        "content": original_content_text
+                    })
+                else:
+                    PPT_data.append({
+                        "slide_number": slide_number,
+                        "title": title,
+                        "content": content
+                    })
+
+            print(PPT_data)
             
             # Create PowerPoint presentation and save it
             presentation = create_presentation(PPT_data)
@@ -291,6 +336,7 @@ if 'processed' not in st.session_state:
 if 'slides_data' not in st.session_state:
     st.session_state.slides_data = []
 uploaded_file = st.file_uploader("Step 1: Choose a PDF file", type=['pdf'])
+store_pdf_in_session(uploaded_file)
 
 keywords = st_tags(
     label= "Step 2: Enter materials to refer from (optional):",
@@ -306,21 +352,40 @@ custom_prompt_text = ", ".join(keywords)
 # Text input for custom prompt
 custom_prompt_text = st.text_input("Step 2: Enter materials to refer from (optional):", help="Enter your textbooks here if you want Gemini to use them")
 
-# Check if file was removed
-if uploaded_file is None:  # If file is removed or not uploaded
+# Ensure the file has been uploaded and is not empty
+if uploaded_file is None or uploaded_file.size == 0:  # If file is removed or empty
     st.session_state.processed = False  # Reset the processed flag
     st.session_state.slides_data = []  # Reset slides data if needed
     st.session_state.output_data = None  # Reset output data
+    st.session_state.exclude_slide_numbers = []
+    store_pdf_in_session(uploaded_file)
+
 else:  # File has been uploaded
     if not st.session_state.processed:
         status_message = st.empty()
         progress_text = "Initialising..."
         my_progress = st.progress(0, text=progress_text)
+        store_pdf_in_session(uploaded_file)
 
 selected_theme = image_select(
     label="Step 3: Select a theme",
     images=[f"theme_thumbnails\\{theme}.jpg" for theme in theme_dict]
 )
+
+# Use the stored PDF to populate the dropdown for excluding slides
+if 'pdf_doc' in st.session_state:
+    doc = st.session_state['pdf_doc']
+    # Create slide options with slide number and title only
+    slide_options = []
+    for i in range(len(doc)):
+        title = doc[i].get_text("text").split("\n")[0]  # First line as title
+        slide_options.append(f"Slide {i + 1}: {title}")
+
+else:
+    slide_options = []
+
+exclude_slides = st.multiselect("Step 4: Select slides to exclude (optional):", slide_options)
+
 
 # Create a button to process the PDF
 process_button = st.button("Process PDF")
@@ -330,6 +395,8 @@ if process_button:
     if uploaded_file is None:
         st.error("Please upload a PDF before processing.")
     else:
+        # Reset the file pointer to the beginning
+        uploaded_file.seek(0)
         # Save the selected theme in session state
         st.session_state.selected_theme = str(selected_theme.split("\\")[-1].split(".")[0])
 
