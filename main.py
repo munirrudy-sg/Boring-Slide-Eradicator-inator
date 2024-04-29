@@ -95,9 +95,10 @@ def create_slide(prs, title, content):
             p.text = line[2:].strip()  # Remove "##"
             p.font.size = Pt(20)  # Larger font for headings
             p.font.bold = True
-        elif line.startswith("*"):
+        elif line.startswith("* "):
             # Bullet point
             p = content_text_frame.add_paragraph()
+            line=line[1:].strip()
             words = line.split()
             bolded_mode = False
             for word in words:
@@ -242,6 +243,7 @@ def process_pdf(uploaded_file):
             output_data.seek(0)
             st.session_state.processed = True
             st.session_state.output_data = output_data
+            #st.session_state.output_data = open("C://Users//Admin//Documents//School//gemini-hackathon//Travis.pptx", "rb").read()
 
             # Clear the status message once done processing
             status_message.empty()
