@@ -58,11 +58,11 @@ To effectively utilise the Boring-Slide-Eradicator-inator, follow these straight
 5. **Process PDF:**
    - Once you’ve configured the settings, click on "Process PDF" to start transforming your slides into clear and engaging material.
 
-If you're unsure about any step, don't worry—detailed instructions are also provided within the app itself, guiding you through each part of the process.
+If you're unsure about any step, don't worry as there are detailed instructions are also provided within the app itself, guiding you through each part of the process.
 
 ## How It Works
 
-The Boring-Slide-Eradicator-inator utilises Gemini AI for processing, Streamlit for user interaction and `pptx-python` to create slides. Here’s how the transformation process works:
+The Boring-Slide-Eradicator-inator utilises `google.generativeai` for processing, `streamlit` for user interaction and `pptx-python` to create slides. Here’s how the transformation process works:
 
 ![Flowchart of App](flowchart.png)
 
@@ -72,7 +72,13 @@ Check out the Boring-Slide-Eradicator-inator in action:
 [![Click to watch our demo](https://i.ytimg.com/vi/Ju8Hr50Ckwk/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLCH_waauRiNLUSuoXpVDCW0UoxerQ)](https://www.youtube.com/watch?v=Ju8Hr50Ckwk)
 
 ## About Us
-Learn more about the team behind this innovative project:
-- Brief bios of team members.
-- Mission statement or goals of the project.
-- Contact information or links to social media.
+
+Meet the team behind the Boring-Slide-Eradicator-inator:
+
+- **Ang Jun Jie** ([LinkedIn](https://www.linkedin.com/in/ang-jun-jie-49a827174/) | [GitHub](https://github.com/buppanasu))
+- **Munir Rudy Herman** ([LinkedIn](https://www.linkedin.com/in/munirrudy) | [GitHub](https://github.com/munirrudy-sg/))
+- **Nadhirah Binti Ayub Khan** ([LinkedIn](https://www.linkedin.com/in/nadhirah-binti-ayub-khan-6460b4163/) | [GitHub](https://github.com/nadhirah5))
+- **Nik Mohammad Farhan Bin Azmi** ([LinkedIn](https://www.linkedin.com/in/farhanazmi0017/) | [GitHub](https://github.com/farhanazmiCS))
+- **Teo Hao Han Travis** ([LinkedIn](https://www.linkedin.com/in/travis-teo-hao-han/) | [GitHub](https://github.com/Tthh123))
+
+We started this project to tackle a common educational challenge—poorly designed lecture slides that hinder student learning. Our tool aims to transform these slides into clear and engaging content, speeding up the understanding process for students and saving time for educators who need to optimise their presentations. By improving how educational content is presented, we hope to make learning more efficient and effective for both students and professors.
