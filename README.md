@@ -66,6 +66,8 @@ The Boring-Slide-Eradicator-inator utilises `google.generativeai` for processing
 
 ![Flowchart of App](flowchart.png)
 
+Leveraging 1.5 Pro's "Output in JSON" and expanded context window, output is structured for seamless slide generation and only one prompt is needed to process the entire PDF, significantly increasing speed.
+
 ## Demo
 Check out the Boring-Slide-Eradicator-inator in action:
 
