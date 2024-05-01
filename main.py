@@ -7,10 +7,8 @@ import fitz  # pip install PyMuPDF
 from pptx import Presentation  # pip install python-pptx
 from pptx.util import Pt, Inches
 import io
-import json
 import re
 from streamlit_image_select import image_select
-from streamlit_tags import st_tags
 
 
 def convert_slides_data_to_text(slides_data):
@@ -209,7 +207,6 @@ def process_pdf(uploaded_file):
 
         # Send the prompt to the AI model
         response = model.generate_content(prompt, request_options={"timeout": 600000})
-        st.text(response.text)
 
         content_pattern = r'"content":\s*"([^"]+)"'
         content_matches = re.findall(content_pattern, response.text, re.DOTALL)
@@ -233,8 +230,6 @@ def process_pdf(uploaded_file):
                         "title": title,
                         "content": content
                     })
-
-            print(PPT_data)
             
             # Create PowerPoint presentation and save it
             presentation = create_presentation(PPT_data)
@@ -243,7 +238,7 @@ def process_pdf(uploaded_file):
             output_data.seek(0)
             st.session_state.processed = True
             st.session_state.output_data = output_data
-            #st.session_state.output_data = open("C://Users//Admin//Documents//School//gemini-hackathon//Travis.pptx", "rb").read()
+            st.session_state.output_data = open("output.pptx", "rb").read() # to delete
 
             # Clear the status message once done processing
             status_message.empty()
@@ -326,7 +321,7 @@ That's why we invented the **Boring-Slide-Eradicator-inator**!   This super-cool
 - **Give Gemini some context**: Tell it what materials to reference for explanations.
 - **Exclude unnecessary slides**: Skip the title pages and "thank you" slides.
 - **Choose your theme**: Because even explanations deserve a little style.
-- **Hit "Process PDF"** and watch the magic happen! ✨
+- **Hit "Process PDF"** and watch the magic happen! 
 
 Get ready to say goodbye to slide-induced headaches and hello to understanding!
 """)
@@ -340,17 +335,6 @@ if 'slides_data' not in st.session_state:
     st.session_state.slides_data = []
 uploaded_file = st.file_uploader("Step 1: Choose a boring PDF file", type=['pdf'])
 store_pdf_in_session(uploaded_file)
-
-# keywords = st_tags(
-#     label= "Step 2: Enter materials to refer from (optional):",
-#     text='Press enter to add',
-#     value=[],
-#     suggestions=['Patterns of Enterprise Application Architecture'],
-#     maxtags = 5,
-#     key='0')
-
-# # Convert the list to a comma-separated string
-# custom_prompt_text = ", ".join(keywords)
 
 # Text input for custom prompt
 custom_prompt_text = st.text_input("Step 2: Enter materials to refer from (optional):", help="Enter your textbooks here if you want Gemini to use them")
@@ -375,7 +359,6 @@ if 'pdf_doc' in st.session_state:
     for i in range(len(doc)):
         title = doc[i].get_text("text").split("\n")[0]  # First line as title
         slide_options.append(f"Slide {i + 1}: {title}")
-
 else:
     slide_options = []
 
