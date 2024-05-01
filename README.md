@@ -77,7 +77,6 @@ Check out the Boring-Slide-Eradicator-inator in action:
 
 Meet the team behind the Boring-Slide-Eradicator-inator:
 
-- **Ang Jun Jie** ([LinkedIn](https://www.linkedin.com/in/ang-jun-jie-49a827174/) | [GitHub](https://github.com/buppanasu))
 - **Munir Rudy Herman** ([LinkedIn](https://www.linkedin.com/in/munirrudy) | [GitHub](https://github.com/munirrudy-sg/))
 - **Nadhirah Binti Ayub Khan** ([LinkedIn](https://www.linkedin.com/in/nadhirah-binti-ayub-khan-6460b4163/) | [GitHub](https://github.com/nadhirah5))
 - **Nik Mohammad Farhan Bin Azmi** ([LinkedIn](https://www.linkedin.com/in/farhanazmi0017/) | [GitHub](https://github.com/farhanazmiCS))
