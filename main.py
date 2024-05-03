@@ -238,7 +238,6 @@ def process_pdf(uploaded_file):
             output_data.seek(0)
             st.session_state.processed = True
             st.session_state.output_data = output_data
-            st.session_state.output_data = open("output.pptx", "rb").read() # to delete
 
             # Clear the status message once done processing
             status_message.empty()
@@ -370,7 +369,9 @@ selected_theme = image_select(
 )
 
 # Create a button to process the PDF
+if process_button:
 process_button = st.button("Zap that PDF!")
+
 
 # When the button is pressed
 if process_button:
