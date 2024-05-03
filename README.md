@@ -71,7 +71,7 @@ Leveraging 1.5 Pro's "Output in JSON" and expanded context window, outp
 ## Demo
 Check out the Boring-Slide-Eradicator-inator in action:
 
-[![Click to watch our demo](https://i.ytimg.com/vi/Ju8Hr50Ckwk/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLCH_waauRiNLUSuoXpVDCW0UoxerQ)](https://www.youtube.com/watch?v=Ju8Hr50Ckwk)
+[![Click to watch our demo](https://i3.ytimg.com/vi/aKh74B5w2dk/maxresdefault.jpg)](https://www.youtube.com/watch?v=aKh74B5w2dk)
 
 ## About Us
 
